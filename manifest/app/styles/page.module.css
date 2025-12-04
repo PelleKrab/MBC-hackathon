@@ -71,7 +71,29 @@
 .walletSection {
   display: flex;
   align-items: center;
+}
+
+.connectPrompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, rgba(6, 214, 160, 0.08), rgba(17, 138, 178, 0.08));
+  border: 1px dashed rgba(6, 214, 160, 0.3);
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.connectIcon {
+  font-size: 1.5rem;
+}
+
+.connectText {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: #94a3b8;
+  font-weight: 500;
 }
 
 .main {

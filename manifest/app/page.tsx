@@ -10,8 +10,8 @@ const App = dynamic(
     ssr: false,
     loading: () => (
       <div className={styles.loadingPage}>
-        <div className={styles.loadingLogo}>📈</div>
-        <p className={styles.loadingTitle}>Predict</p>
+        <div className={styles.loadingLogo}>🎯</div>
+        <p className={styles.loadingTitle}>Manifest</p>
         <div className={styles.loadingSpinner} />
       </div>
     ),

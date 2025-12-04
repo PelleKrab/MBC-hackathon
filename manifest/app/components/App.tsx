@@ -5,20 +5,49 @@ import { base } from "wagmi/chains";
 import { OnchainKitProvider } from "@coinbase/onchainkit";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useAccount } from "wagmi";
-import { Wallet } from "@coinbase/onchainkit/wallet";
+import {
+  ConnectWallet,
+  Wallet,
+  WalletDropdown,
+  WalletDropdownDisconnect,
+} from "@coinbase/onchainkit/wallet";
+import {
+  Address,
+  Avatar,
+  Name,
+  Identity,
+} from "@coinbase/onchainkit/identity";
 import { Market } from "../lib/types";
 import { storage } from "../lib/storage";
 import { MarketList } from "./MarketList";
 import styles from "../styles/page.module.css";
 import "@coinbase/onchainkit/styles.css";
 
+function WalletButton() {
+  return (
+    <Wallet>
+      <ConnectWallet>
+        <Avatar className="h-6 w-6" />
+        <Name />
+      </ConnectWallet>
+      <WalletDropdown>
+        <Identity className="px-4 pt-3 pb-2" hasCopyAddressOnClick>
+          <Avatar />
+          <Name />
+          <Address />
+        </Identity>
+        <WalletDropdownDisconnect />
+      </WalletDropdown>
+    </Wallet>
+  );
+}
+
 function AppContent() {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
   const { setMiniAppReady, isMiniAppReady } = useMiniKit();
 
-  // Signal to MiniKit that the app is ready
   useEffect(() => {
     if (!isMiniAppReady) {
       setMiniAppReady();
@@ -35,19 +64,17 @@ function AppContent() {
     setIsLoading(false);
   }, []);
 
-  // On first load, check if we have valid markets, if not refresh
   useEffect(() => {
     storage.initializeSeedData();
     const allMarkets = storage.getMarkets();
     const activeMarkets = allMarkets.filter(
       (m) => m.status === "active" && m.deadline > Date.now()
     );
-    
-    // If no active markets, refresh with new data
+
     if (activeMarkets.length === 0) {
       storage.refreshMarkets();
     }
-    
+
     loadMarkets();
     const interval = setInterval(loadMarkets, 30000);
     return () => clearInterval(interval);
@@ -58,7 +85,6 @@ function AppContent() {
     loadMarkets();
   };
 
-  // Calculate some stats
   const totalPool = markets.reduce(
     (sum, m) => sum + m.yesPool + m.noPool + m.timestampPool,
     0
@@ -75,9 +101,7 @@ function AppContent() {
               <span className={styles.subtitle}>MBC Predictions</span>
             </div>
           </div>
-          <div className={styles.walletSection}>
-            <Wallet />
-          </div>
+          <WalletButton />
         </div>
       </header>
 
@@ -89,6 +113,15 @@ function AppContent() {
             Predict what happens at MBC • Win bragging rights & ETH
           </p>
         </div>
+
+        {!isConnected && (
+          <div className={styles.connectPrompt}>
+            <span className={styles.connectIcon}>👛</span>
+            <p className={styles.connectText}>
+              Connect your wallet to place predictions
+            </p>
+          </div>
+        )}
 
         <div className={styles.statsBar}>
           <div className={styles.statItem}>
@@ -150,9 +183,7 @@ export function App() {
       config={{
         appearance: {
           mode: "dark",
-        },
-        wallet: {
-          display: "modal",
+          theme: "base",
         },
       }}
       miniKit={{
