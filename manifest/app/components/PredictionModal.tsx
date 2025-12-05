@@ -234,18 +234,29 @@ export function PredictionModal({
 
           {error && <div className={styles.error}>{error}</div>}
 
-          <TransactionStatus
-            hash={isApproving ? approveHash : betHash}
-            isPending={isApproving || isBetting}
-            isSuccess={approveSuccess || betSuccess}
-            error={approveError || betError}
-            label={isApproving ? "USDC Approval" : "Prediction"}
-            onDismiss={() => {
-              if (betSuccess) {
-                onClose();
-              }
-            }}
-          />
+          {isApproving && (
+            <TransactionStatus
+              hash={approveHash}
+              isPending={isApproving}
+              isSuccess={approveSuccess}
+              error={approveError}
+              label="USDC Approval"
+            />
+          )}
+          {!isApproving && (isBetting || betSuccess || betError) && (
+            <TransactionStatus
+              hash={betHash}
+              isPending={isBetting}
+              isSuccess={betSuccess}
+              error={betError}
+              label="Prediction"
+              onDismiss={() => {
+                if (betSuccess) {
+                  onClose();
+                }
+              }}
+            />
+          )}
 
           {!userAddress && (
             <div className={styles.warning}>

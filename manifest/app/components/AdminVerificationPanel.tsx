@@ -98,13 +98,15 @@ export function AdminVerificationPanel({ isAdmin = false }: AdminVerificationPan
 
   return (
     <div className={styles.container}>
-      <TransactionStatus
-        hash={hash}
-        isPending={isPending}
-        isSuccess={isSuccess}
-        error={error}
-        label="Proof Verification"
-      />
+      {(isPending || isSuccess || error) && (
+        <TransactionStatus
+          hash={hash}
+          isPending={isPending}
+          isSuccess={isSuccess}
+          error={error}
+          label="Proof Verification"
+        />
+      )}
       
       <div className={styles.header}>
         <h2 className={styles.title}>Proof Verification</h2>

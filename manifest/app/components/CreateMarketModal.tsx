@@ -148,18 +148,20 @@ export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps
 
           {error && <div className={styles.error}>{error}</div>}
 
-          <TransactionStatus
-            hash={hash}
-            isPending={isPending}
-            isSuccess={isSuccess}
-            error={txError}
-            label="Market Creation"
-            onDismiss={() => {
-              if (isSuccess) {
-                onClose();
-              }
-            }}
-          />
+          {(isPending || isSuccess || txError) && (
+            <TransactionStatus
+              hash={hash}
+              isPending={isPending}
+              isSuccess={isSuccess}
+              error={txError}
+              label="Market Creation"
+              onDismiss={() => {
+                if (isSuccess) {
+                  onClose();
+                }
+              }}
+            />
+          )}
 
           {!isConnected && (
             <div className={styles.warning}>
