@@ -1,14 +1,16 @@
-# Manifest - MBC Prediction Markets
+# Manifest - Base Prediction Market with Bounty System
 
-A prediction market mini app for the Midwest Blockchain Conference. Built with Next.js, OnchainKit, and Base.
+A prediction market mini app built on Base with a unique bounty system that rewards people who make events happen. Built with Next.js, OnchainKit, and Base. Polymarket-compatible architecture.
 
 ## Features
 
-- 🎯 Place YES/NO predictions on MBC events
+- 🎯 Place YES/NO predictions on events
 - ⏱️ Guess the exact timestamp when events will happen
-- 💰 90% of pool goes to winning side, 10% to best timestamp guess
+- 💰 80% to winners, 10% to best timestamp guess, 10% to event makers (bounty)
+- 🏆 **Unique Bounty System** - Rewards people who make events happen
 - 👛 Base Smart Wallet integration
-- 📱 Works as a Farcaster Mini App
+- 📱 Works as a Farcaster Mini App (MiniKit)
+- 🔗 Polymarket-compatible architecture
 
 ## Getting Started
 
@@ -99,6 +101,21 @@ manifest/
 - **Wallet**: Coinbase Smart Wallet
 - **Mini App SDK**: Farcaster MiniKit
 - **Styling**: CSS Modules
+- **Architecture**: Polymarket-compatible (CTF framework ready)
+
+## Unique Features
+
+### Bounty System
+- **10% of all bets** go to a bounty pool
+- Users who make events happen can submit proof
+- Admin verifies and distributes bounty
+- Incentivizes event creation, not just prediction
+
+### Polymarket Integration Ready
+- Architecture designed for Polymarket compatibility
+- API integration hooks ready
+- Can integrate with Polymarket markets for liquidity
+- UMA resolution compatible
 
 ## License
 

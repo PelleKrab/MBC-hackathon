@@ -137,7 +137,7 @@ export function PredictionModal({
                   <span>{(amountNum * 0.9).toFixed(4)} ETH</span>
                 </div>
                 <div className={styles.breakdownItem}>
-                  <span>To timestamp pool (10%):</span>
+                  <span>To bounty pool (10%):</span>
                   <span>{(amountNum * 0.1).toFixed(4)} ETH</span>
                 </div>
               </div>

@@ -1,27 +1,28 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { base } from "wagmi/chains";
 import { OnchainKitProvider } from "@coinbase/onchainkit";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { useAccount } from "wagmi";
 import {
-  ConnectWallet,
-  Wallet,
-  WalletDropdown,
-  WalletDropdownDisconnect,
-} from "@coinbase/onchainkit/wallet";
-import {
-  Address,
-  Avatar,
-  Name,
-  Identity,
+    Address,
+    Avatar,
+    Identity,
+    Name,
 } from "@coinbase/onchainkit/identity";
-import { Market } from "../lib/types";
-import { storage } from "../lib/storage";
-import { MarketList } from "./MarketList";
-import styles from "../styles/page.module.css";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import "@coinbase/onchainkit/styles.css";
+import {
+    ConnectWallet,
+    Wallet,
+    WalletDropdown,
+    WalletDropdownDisconnect,
+} from "@coinbase/onchainkit/wallet";
+import { useCallback, useEffect, useState } from "react";
+import { useAccount } from "wagmi";
+import { base } from "wagmi/chains";
+import { storage } from "../lib/storage";
+import { Market } from "../lib/types";
+import styles from "../styles/page.module.css";
+import { CreateMarketModal } from "./CreateMarketModal";
+import { MarketList } from "./MarketList";
 
 function WalletButton() {
   return (
@@ -45,6 +46,7 @@ function WalletButton() {
 function AppContent() {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const { address, isConnected } = useAccount();
   const { setMiniAppReady, isMiniAppReady } = useMiniKit();
 
@@ -86,7 +88,7 @@ function AppContent() {
   };
 
   const totalPool = markets.reduce(
-    (sum, m) => sum + m.yesPool + m.noPool + m.timestampPool,
+    (sum, m) => sum + m.yesPool + m.noPool + (m.bountyPool || 0),
     0
   );
 
@@ -143,9 +145,19 @@ function AppContent() {
           <p className={styles.sectionSubtitle}>
             Place your bets • Guess the exact time • Win big
           </p>
-          <button onClick={handleRefresh} className={styles.refreshButton}>
-            🔄 Reset Markets
-          </button>
+          <div className={styles.headerActions}>
+            <button onClick={handleRefresh} className={styles.refreshButton}>
+              🔄 Reset Markets
+            </button>
+            {isConnected && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className={styles.createButton}
+              >
+                ➕ Create Market
+              </button>
+            )}
+          </div>
         </div>
 
         <MarketList
@@ -154,6 +166,16 @@ function AppContent() {
           isLoading={isLoading}
           onPredictionSuccess={loadMarkets}
         />
+
+        {showCreateModal && (
+          <CreateMarketModal
+            onClose={() => setShowCreateModal(false)}
+            onSuccess={() => {
+              setShowCreateModal(false);
+              loadMarkets();
+            }}
+          />
+        )}
       </main>
     </div>
   );

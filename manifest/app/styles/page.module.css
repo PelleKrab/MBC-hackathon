@@ -113,8 +113,17 @@
   gap: 0.5rem;
 }
 
-.refreshButton {
+.headerActions {
+  display: flex;
+  gap: 0.75rem;
   margin-top: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.refreshButton,
+.createButton {
+  margin-top: 0;
   padding: 0.5rem 1rem;
   font-size: 0.75rem;
   font-weight: 600;
@@ -132,6 +141,12 @@
   background: var(--bg-card);
   border-color: var(--accent-primary);
   color: var(--accent-primary);
+}
+
+.createButton:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--bg-primary);
 }
 
 .sectionTitle {

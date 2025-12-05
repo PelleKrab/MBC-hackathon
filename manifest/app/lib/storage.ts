@@ -1,8 +1,9 @@
-import { Market, Prediction, PredictionInput } from "./types";
+import { Market, Prediction, PredictionInput, ProofSubmission, ProofSubmissionInput } from "./types";
 import { generateMockMarkets } from "./utils/mockData";
 
-const MARKETS_KEY = "pm_markets_v2"; // Versioned key to force refresh
-const PREDICTIONS_KEY = "pm_predictions_v2";
+const MARKETS_KEY = "pm_markets_v3";
+const PREDICTIONS_KEY = "pm_predictions_v3";
+const PROOFS_KEY = "pm_proofs_v1";
 
 // Helper to check if we have a real browser localStorage
 function getBrowserStorage(): Storage | null {
@@ -61,6 +62,11 @@ class StorageService {
     if (!existingPredictions) {
       this.setItem(PREDICTIONS_KEY, JSON.stringify([]));
     }
+
+    const existingProofs = this.getItem(PROOFS_KEY);
+    if (!existingProofs) {
+      this.setItem(PROOFS_KEY, JSON.stringify([]));
+    }
   }
 
   // Force refresh all market data with new mock data
@@ -69,6 +75,7 @@ class StorageService {
     const mockMarkets = generateMockMarkets();
     this.setItem(MARKETS_KEY, JSON.stringify(mockMarkets));
     this.setItem(PREDICTIONS_KEY, JSON.stringify([]));
+    this.setItem(PROOFS_KEY, JSON.stringify([]));
   }
 
   getMarkets(): Market[] {
@@ -133,11 +140,11 @@ class StorageService {
     // Update market pools
     const market = this.getMarket(marketId);
     if (market) {
-      const timestampPoolAmount = amount * 0.1; // 10% to timestamp pool
+      const bountyPoolAmount = amount * 0.1; // 10% to bounty pool
       const predictionPoolAmount = amount * 0.9; // 90% to yes/no pool
 
       const updates: Partial<Market> = {
-        timestampPool: market.timestampPool + timestampPoolAmount,
+        bountyPool: (market.bountyPool || 0) + bountyPoolAmount,
       };
 
       if (predictionChoice === "yes") {
@@ -159,12 +166,62 @@ class StorageService {
     );
   }
 
+  // Proof submission methods
+  getProofs(marketId?: string): ProofSubmission[] {
+    if (!getBrowserStorage()) return [];
+
+    const data = this.getItem(PROOFS_KEY);
+    if (!data) return [];
+
+    const proofs: ProofSubmission[] = JSON.parse(data);
+
+    if (marketId) {
+      return proofs.filter((p) => p.marketId === marketId);
+    }
+
+    return proofs;
+  }
+
+  addProof(input: ProofSubmissionInput): ProofSubmission {
+    const newProof: ProofSubmission = {
+      ...input,
+      id: `proof-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      submittedAt: Date.now(),
+      status: "pending",
+    };
+
+    const proofs = this.getProofs();
+    proofs.push(newProof);
+    this.setItem(PROOFS_KEY, JSON.stringify(proofs));
+
+    return newProof;
+  }
+
+  updateProof(proofId: string, updates: Partial<ProofSubmission>): ProofSubmission | null {
+    const proofs = this.getProofs();
+    const index = proofs.findIndex((p) => p.id === proofId);
+
+    if (index === -1) return null;
+
+    proofs[index] = { ...proofs[index], ...updates };
+    this.setItem(PROOFS_KEY, JSON.stringify(proofs));
+
+    return proofs[index];
+  }
+
+  getPendingProofs(): ProofSubmission[] {
+    return this.getProofs().filter((p) => p.status === "pending");
+  }
+
   clearAllData(): void {
     this.removeItem(MARKETS_KEY);
     this.removeItem(PREDICTIONS_KEY);
+    this.removeItem(PROOFS_KEY);
     // Also clear old versioned keys
     this.removeItem("pm_markets");
     this.removeItem("pm_predictions");
+    this.removeItem("pm_markets_v2");
+    this.removeItem("pm_predictions_v2");
     this.initializeSeedData();
   }
 }

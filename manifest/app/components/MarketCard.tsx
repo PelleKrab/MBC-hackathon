@@ -12,13 +12,16 @@ import styles from "../styles/MarketCard.module.css";
 interface MarketCardProps {
   market: Market;
   onPlaceBet: (market: Market) => void;
+  onSubmitProof?: (market: Market) => void;
   index?: number;
 }
 
-export function MarketCard({ market, onPlaceBet, index = 0 }: MarketCardProps) {
+export function MarketCard({ market, onPlaceBet, onSubmitProof, index = 0 }: MarketCardProps) {
   const { yesOdds, noOdds } = calculateOdds(market);
   const totalPool = calculateTotalPool(market);
   const timeRemaining = formatTimeRemaining(market.deadline);
+  const bountyAmount = market.bountyPool || 0;
+  const canSubmitProof = market.status === "active" && Date.now() >= market.deadline;
 
   return (
     <article
@@ -56,10 +59,27 @@ export function MarketCard({ market, onPlaceBet, index = 0 }: MarketCardProps) {
         <div className={styles.poolInfo}>
           <span className={styles.poolLabel}>Total Pool</span>
           <span className={styles.poolAmount}>{formatAmount(totalPool)} ETH</span>
+          {bountyAmount > 0 && (
+            <span className={styles.bountyLabel}>
+              💰 Bounty: {formatAmount(bountyAmount)} ETH
+            </span>
+          )}
         </div>
-        <button className={styles.betButton} onClick={() => onPlaceBet(market)}>
-          Place Prediction
-        </button>
+        <div className={styles.actions}>
+          {canSubmitProof && onSubmitProof && (
+            <button
+              className={styles.proofButton}
+              onClick={() => onSubmitProof(market)}
+            >
+              Submit Proof
+            </button>
+          )}
+          {market.status === "active" && Date.now() < market.deadline && (
+            <button className={styles.betButton} onClick={() => onPlaceBet(market)}>
+              Place Prediction
+            </button>
+          )}
+        </div>
       </footer>
     </article>
   );

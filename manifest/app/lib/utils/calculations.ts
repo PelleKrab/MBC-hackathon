@@ -17,7 +17,7 @@ export function calculateOdds(market: Market): { yesOdds: number; noOdds: number
 }
 
 export function calculateTotalPool(market: Market): number {
-  return market.yesPool + market.noPool + market.timestampPool;
+  return market.yesPool + market.noPool + (market.bountyPool || 0);
 }
 
 export function calculatePotentialPayout(
@@ -29,7 +29,7 @@ export function calculatePotentialPayout(
 
   const currentPool = prediction === "yes" ? market.yesPool : market.noPool;
   const opposingPool = prediction === "yes" ? market.noPool : market.yesPool;
-  const contributionToPool = amount * 0.9; // 90% goes to prediction pool
+  const contributionToPool = amount * 0.9; // 90% goes to prediction pool (yes/no)
 
   // If you win, you get your share of the total betting pool
   const newPool = currentPool + contributionToPool;

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Market } from "../lib/types";
 import { MarketCard } from "./MarketCard";
 import { PredictionModal } from "./PredictionModal";
+import { ProofSubmissionModal } from "./ProofSubmissionModal";
+import { useSubmitProof } from "../lib/hooks/useProofSubmission";
 import styles from "../styles/MarketList.module.css";
 
 interface MarketListProps {
@@ -20,6 +22,8 @@ export function MarketList({
   onPredictionSuccess,
 }: MarketListProps) {
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
+  const [proofMarket, setProofMarket] = useState<Market | null>(null);
+  const { submitProof, isPending: isSubmittingProof } = useSubmitProof();
 
   if (isLoading) {
     return (
@@ -55,6 +59,7 @@ export function MarketList({
               key={market.id}
               market={market}
               onPlaceBet={setSelectedMarket}
+              onSubmitProof={setProofMarket}
               index={index}
             />
           ))}
@@ -67,6 +72,25 @@ export function MarketList({
           userAddress={userAddress}
           onClose={() => setSelectedMarket(null)}
           onSuccess={onPredictionSuccess}
+        />
+      )}
+
+      {proofMarket && userAddress && (
+        <ProofSubmissionModal
+          market={proofMarket}
+          userAddress={userAddress}
+          onClose={() => setProofMarket(null)}
+          onSubmit={async (data) => {
+            await submitProof({
+              marketId: proofMarket.id,
+              submitterAddress: userAddress,
+              imageFile: data.imageFile,
+              timestamp: data.timestamp,
+              description: data.description,
+            });
+            setProofMarket(null);
+            onPredictionSuccess(); // Refresh markets
+          }}
         />
       )}
     </>
