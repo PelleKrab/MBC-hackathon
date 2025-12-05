@@ -29,13 +29,11 @@ function WalletButton() {
   // If we're in a mini app and have context, show the connected state
   if (context && context.user) {
     return (
-      <div className={styles.miniAppWallet}>
-        <div className={styles.connectedBadge}>
-          <span className={styles.connectedDot} />
-          <span className={styles.connectedText}>
-            {context.user.displayName || `FID: ${context.user.fid}`}
-          </span>
-        </div>
+      <div className={styles.connectedBadge}>
+        <span className={styles.connectedDot} />
+        <span className={styles.connectedText}>
+          {context.user.displayName || `FID: ${context.user.fid}`}
+        </span>
       </div>
     );
   }
