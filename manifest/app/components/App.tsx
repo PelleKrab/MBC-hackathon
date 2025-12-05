@@ -2,25 +2,27 @@
 
 import { OnchainKitProvider } from "@coinbase/onchainkit";
 import {
-    Address,
-    Avatar,
-    Identity,
-    Name,
+  Address,
+  Avatar,
+  Identity,
+  Name,
 } from "@coinbase/onchainkit/identity";
 import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import "@coinbase/onchainkit/styles.css";
 import {
-    ConnectWallet,
-    Wallet,
-    WalletDropdown,
-    WalletDropdownDisconnect,
+  ConnectWallet,
+  Wallet,
+  WalletDropdown,
+  WalletDropdownDisconnect,
 } from "@coinbase/onchainkit/wallet";
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
-import { base } from "wagmi/chains";
-import { useMarkets } from "../lib/hooks/useMarkets";
+import { useAccount, useChainId, useSwitchChain } from "wagmi";
+import { baseSepolia } from "wagmi/chains";
 import { isContractConfigured } from "../lib/contracts";
+import { useContractAdmin } from "../lib/hooks/useBountyContract";
+import { useMarkets } from "../lib/hooks/useMarkets";
 import styles from "../styles/page.module.css";
+import { AdminVerificationPanel } from "./AdminVerificationPanel";
 import { CreateMarketModal } from "./CreateMarketModal";
 import { MarketList } from "./MarketList";
 
@@ -61,6 +63,8 @@ function WalletButton() {
 function AppContent() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   const { context, setMiniAppReady, isMiniAppReady } = useMiniKit();
   
   // Use contract-based market loading
@@ -70,6 +74,25 @@ function AppContent() {
   const walletAddress = address;
   const isUserConnected = isConnected || !!context?.user;
   const contractConfigured = isContractConfigured();
+  
+  // Check if user is on the correct network
+  const isOnBaseSepolia = chainId === baseSepolia.id;
+  
+  // Check if user is admin
+  const { admin: contractAdmin } = useContractAdmin();
+  const isAdmin = contractAdmin && walletAddress && 
+    contractAdmin.toLowerCase() === walletAddress.toLowerCase();
+  
+  // Auto-switch to Base Sepolia if connected to wrong network
+  useEffect(() => {
+    if (isConnected && !isOnBaseSepolia && switchChain) {
+      try {
+        switchChain({ chainId: baseSepolia.id });
+      } catch (err) {
+        console.error("Failed to switch chain:", err);
+      }
+    }
+  }, [isConnected, isOnBaseSepolia, switchChain]);
 
   // Signal to MiniKit that the app is ready
   useEffect(() => {
@@ -125,6 +148,24 @@ function AppContent() {
           </div>
         )}
 
+        {isConnected && !isOnBaseSepolia && (
+          <div className={styles.connectPrompt}>
+            <span className={styles.connectIcon}>⚠️</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "center" }}>
+              <p className={styles.connectText}>
+                Please switch to Base Sepolia network (Chain ID: 84532)
+              </p>
+              <button
+                onClick={() => switchChain?.({ chainId: baseSepolia.id })}
+                className={styles.createButton}
+                style={{ marginTop: "0.5rem" }}
+              >
+                Switch to Base Sepolia
+              </button>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className={styles.connectPrompt}>
             <span className={styles.connectIcon}>❌</span>
@@ -174,6 +215,12 @@ function AppContent() {
           onPredictionSuccess={refetch}
         />
 
+        {isAdmin && (
+          <div className={styles.adminSection}>
+            <AdminVerificationPanel isAdmin={true} />
+          </div>
+        )}
+
         {showCreateModal && (
           <CreateMarketModal
             onClose={() => setShowCreateModal(false)}
@@ -208,11 +255,15 @@ export function App() {
   return (
     <OnchainKitProvider
       apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
-      chain={base}
+      chain={baseSepolia}
+      chains={[baseSepolia]}
       config={{
         appearance: {
           mode: "dark",
           theme: "base",
+        },
+        wagmi: {
+          chains: [baseSepolia],
         },
       }}
       miniKit={{

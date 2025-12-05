@@ -5,6 +5,7 @@ import { useAccount } from "wagmi";
 import { useCreateBountyMarket } from "../lib/hooks/useBountyContract";
 import { isContractConfigured } from "../lib/contracts";
 import { TimestampPicker } from "./TimestampPicker";
+import { TransactionStatus } from "./TransactionStatus";
 import styles from "../styles/CreateMarketModal.module.css";
 
 interface CreateMarketModalProps {
@@ -14,12 +15,11 @@ interface CreateMarketModalProps {
 
 export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps) {
   const { address, isConnected } = useAccount();
-  const { createBountyMarket, isPending, isSuccess, error: txError } = useCreateBountyMarket();
+  const { createBountyMarket, hash, isPending, isSuccess, error: txError } = useCreateBountyMarket();
 
   const [question, setQuestion] = useState("");
   const [description, setDescription] = useState("");
   const [deadline, setDeadline] = useState(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
-  const [resolutionDate, setResolutionDate] = useState(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days
   const [error, setError] = useState("");
 
   // Handle successful transaction
@@ -66,10 +66,8 @@ export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps
       return;
     }
 
-    if (resolutionDate <= deadline) {
-      setError("Resolution date must be after deadline");
-      return;
-    }
+    // Auto-calculate resolution date as 1 day after deadline
+    const resolutionDate = deadline + 24 * 60 * 60 * 1000; // 1 day after deadline
 
     try {
       await createBountyMarket(question, description, deadline, resolutionDate);
@@ -131,18 +129,7 @@ export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps
               value={deadline}
               onChange={setDeadline}
               label=""
-              helperText="When betting closes"
-            />
-          </div>
-
-          <div className={styles.section}>
-            <label className={styles.label}>Expected Resolution Date *</label>
-            <TimestampPicker
-              minDate={deadline}
-              value={resolutionDate}
-              onChange={setResolutionDate}
-              label=""
-              helperText="When the event is expected to resolve"
+              helperText="When betting closes. Proof submissions can be made after this deadline."
             />
           </div>
 
@@ -160,6 +147,19 @@ export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps
           </div>
 
           {error && <div className={styles.error}>{error}</div>}
+
+          <TransactionStatus
+            hash={hash}
+            isPending={isPending}
+            isSuccess={isSuccess}
+            error={txError}
+            label="Market Creation"
+            onDismiss={() => {
+              if (isSuccess) {
+                onClose();
+              }
+            }}
+          />
 
           {!isConnected && (
             <div className={styles.warning}>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Market } from "../lib/types";
 import { TimestampPicker } from "./TimestampPicker";
+import { TransactionStatus } from "./TransactionStatus";
 import { useContributeToBounty, useApproveUSDC, useUSDCBalance, useUSDCAllowance } from "../lib/hooks/useBountyContract";
 import { isContractConfigured } from "../lib/contracts";
 import { calculateOdds, calculatePotentialPayout } from "../lib/utils/calculations";
@@ -27,8 +28,8 @@ export function PredictionModal({
   const [error, setError] = useState<string>("");
   const [step, setStep] = useState<"input" | "approve" | "confirm">("input");
 
-  const { contributeToBounty, isPending: isBetting, isSuccess: betSuccess, error: betError } = useContributeToBounty();
-  const { approveUSDC, isPending: isApproving, isSuccess: approveSuccess, error: approveError } = useApproveUSDC();
+  const { contributeToBounty, hash: betHash, isPending: isBetting, isSuccess: betSuccess, error: betError } = useContributeToBounty();
+  const { approveUSDC, hash: approveHash, isPending: isApproving, isSuccess: approveSuccess, error: approveError } = useApproveUSDC();
   const { balance: usdcBalance, refetch: refetchBalance } = useUSDCBalance();
   const { allowance: usdcAllowance, refetch: refetchAllowance } = useUSDCAllowance();
 
@@ -232,6 +233,19 @@ export function PredictionModal({
           )}
 
           {error && <div className={styles.error}>{error}</div>}
+
+          <TransactionStatus
+            hash={isApproving ? approveHash : betHash}
+            isPending={isApproving || isBetting}
+            isSuccess={approveSuccess || betSuccess}
+            error={approveError || betError}
+            label={isApproving ? "USDC Approval" : "Prediction"}
+            onDismiss={() => {
+              if (betSuccess) {
+                onClose();
+              }
+            }}
+          />
 
           {!userAddress && (
             <div className={styles.warning}>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ProofSubmission } from "../lib/types";
 import { storage } from "../lib/storage";
 import { useVerifyProof } from "../lib/hooks/useBountyContract";
+import { TransactionStatus } from "./TransactionStatus";
 import styles from "../styles/AdminVerificationPanel.module.css";
 
 interface AdminVerificationPanelProps {
@@ -13,7 +14,7 @@ interface AdminVerificationPanelProps {
 export function AdminVerificationPanel({ isAdmin = false }: AdminVerificationPanelProps) {
   const [proofs, setProofs] = useState<ProofSubmission[]>([]);
   const [selectedProof, setSelectedProof] = useState<ProofSubmission | null>(null);
-  const { verifyProof, isPending } = useVerifyProof();
+  const { verifyProof, hash, isPending, isSuccess, error } = useVerifyProof();
 
   // Load pending proofs
   const loadPendingProofs = () => {
@@ -97,6 +98,14 @@ export function AdminVerificationPanel({ isAdmin = false }: AdminVerificationPan
 
   return (
     <div className={styles.container}>
+      <TransactionStatus
+        hash={hash}
+        isPending={isPending}
+        isSuccess={isSuccess}
+        error={error}
+        label="Proof Verification"
+      />
+      
       <div className={styles.header}>
         <h2 className={styles.title}>Proof Verification</h2>
         <button onClick={loadPendingProofs} className={styles.refreshButton}>
