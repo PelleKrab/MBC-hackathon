@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { base } from "wagmi/chains";
 import { OnchainKitProvider } from "@coinbase/onchainkit";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { useAccount } from "wagmi";
+import { useMiniKit, useAddFrame } from "@coinbase/onchainkit/minikit";
+import { useAccount, useConnect } from "wagmi";
 import {
   ConnectWallet,
   Wallet,
@@ -24,6 +24,24 @@ import styles from "../styles/page.module.css";
 import "@coinbase/onchainkit/styles.css";
 
 function WalletButton() {
+  const { context } = useMiniKit();
+  const { isConnected, address } = useAccount();
+  
+  // If we're in a mini app and have context, show the connected state
+  if (context && context.user) {
+    return (
+      <div className={styles.miniAppWallet}>
+        <div className={styles.connectedBadge}>
+          <span className={styles.connectedDot} />
+          <span className={styles.connectedText}>
+            {context.user.displayName || `FID: ${context.user.fid}`}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise show the regular wallet connect
   return (
     <Wallet>
       <ConnectWallet>
@@ -46,8 +64,13 @@ function AppContent() {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { address, isConnected } = useAccount();
-  const { setMiniAppReady, isMiniAppReady } = useMiniKit();
+  const { context, setMiniAppReady, isMiniAppReady } = useMiniKit();
+  
+  // Get wallet address - either from wagmi or from mini app context
+  const walletAddress = address || context?.user?.walletAddress;
+  const isUserConnected = isConnected || !!context?.user;
 
+  // Signal to MiniKit that the app is ready
   useEffect(() => {
     if (!isMiniAppReady) {
       setMiniAppReady();
@@ -114,7 +137,7 @@ function AppContent() {
           </p>
         </div>
 
-        {!isConnected && (
+        {!isUserConnected && (
           <div className={styles.connectPrompt}>
             <span className={styles.connectIcon}>👛</span>
             <p className={styles.connectText}>
@@ -150,7 +173,7 @@ function AppContent() {
 
         <MarketList
           markets={markets}
-          userAddress={address}
+          userAddress={walletAddress}
           isLoading={isLoading}
           onPredictionSuccess={loadMarkets}
         />

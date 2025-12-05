@@ -73,6 +73,39 @@
   align-items: center;
 }
 
+.miniAppWallet {
+  display: flex;
+  align-items: center;
+}
+
+.connectedBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 100px;
+  color: #10b981;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.connectedDot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.connectedText {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .connectPrompt {
   display: flex;
   align-items: center;
