@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { base } from "wagmi/chains";
 import { OnchainKitProvider } from "@coinbase/onchainkit";
-import { useMiniKit, useAddFrame } from "@coinbase/onchainkit/minikit";
-import { useAccount, useConnect } from "wagmi";
+import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { useAccount } from "wagmi";
 import {
   ConnectWallet,
   Wallet,
@@ -25,7 +25,6 @@ import "@coinbase/onchainkit/styles.css";
 
 function WalletButton() {
   const { context } = useMiniKit();
-  const { isConnected, address } = useAccount();
   
   // If we're in a mini app and have context, show the connected state
   if (context && context.user) {
