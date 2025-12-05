@@ -65,8 +65,8 @@ function AppContent() {
   const { address, isConnected } = useAccount();
   const { context, setMiniAppReady, isMiniAppReady } = useMiniKit();
   
-  // Get wallet address - either from wagmi or from mini app context
-  const walletAddress = address || context?.user?.walletAddress;
+  // Get wallet address from wagmi, or use FID as identifier in mini app
+  const walletAddress = address;
   const isUserConnected = isConnected || !!context?.user;
 
   // Signal to MiniKit that the app is ready
