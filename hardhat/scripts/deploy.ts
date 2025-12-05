@@ -32,68 +32,61 @@ async function main() {
   console.log("Deploying with account:", deployer.address);
   console.log("Account balance:", (await ethers.provider.getBalance(deployer.address)).toString());
 
-  // For testnet, deploy MockUSDC first
-  // For mainnet, use existing USDC address: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+  // Deploy MockUSDC for testing (works on both testnet and mainnet)
+  // This allows testing on mainnet without needing real USDC
+  console.log("\n1. Deploying MockUSDC for testing...");
+  let mockUSDC;
+  let retries = 3;
   
-  let usdcAddress: string;
-  
-  // Check if we're on testnet (Base Sepolia) or mainnet
-  const network = await ethers.provider.getNetwork();
-  const isTestnet = network.chainId === 84532n; // Base Sepolia chain ID
-  
-  if (isTestnet) {
-    console.log("\n1. Deploying MockUSDC for testing...");
-    let mockUSDC;
-    let retries = 3;
-    
-    while (retries > 0) {
-      try {
-        const MockUSDC = await ethers.getContractFactory("MockUSDC");
-        // Mint 1,000,000 USDC (6 decimals) = 1,000,000,000,000
-        console.log("   Sending deployment transaction...");
-        mockUSDC = await MockUSDC.deploy(ethers.parseUnits("1000000", 6));
-        console.log("   Waiting for confirmation (this may take 30-60 seconds)...");
-        await mockUSDC.waitForDeployment();
-        usdcAddress = await mockUSDC.getAddress();
-        console.log("✓ MockUSDC deployed to:", usdcAddress);
-        break;
-      } catch (error: any) {
-        retries--;
-        if (retries === 0) {
-          console.error("\n❌ Failed to deploy MockUSDC after retries");
-          if (error.code === 'ECONNRESET' || error.message?.includes('ECONNRESET')) {
-            console.error("\n💡 Network connection issue detected!");
-            console.error("   Try using Alchemy RPC for more reliable connection:");
-            console.error("   1. Sign up: https://www.alchemy.com/");
-            console.error("   2. Create Base Sepolia app");
-            console.error("   3. Add to .env: BASE_SEPOLIA_RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_KEY");
-          }
-          throw error;
-        }
-        console.log(`   Retry ${3 - retries}/3 (waiting 5 seconds)...`);
-        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
-      }
-    }
-    
-    // Give deployer some USDC for testing
-    console.log("\n2. Minting 10,000 USDC to deployer for testing...");
+  while (retries > 0) {
     try {
-      await mockUSDC.mint(deployer.address, ethers.parseUnits("10000", 6));
-      console.log("✓ Minted successfully");
-    } catch (error) {
-      console.log("⚠️  Mint failed, but deployment succeeded");
+      const MockUSDC = await ethers.getContractFactory("MockUSDC");
+      // Mint 1,000,000 USDC (6 decimals) = 1,000,000,000,000
+      console.log("   Sending deployment transaction...");
+      mockUSDC = await MockUSDC.deploy(ethers.parseUnits("1000000", 6));
+      console.log("   Waiting for confirmation (this may take 30-60 seconds)...");
+      await mockUSDC.waitForDeployment();
+      console.log("✓ MockUSDC deployed");
+      break;
+    } catch (error: any) {
+      retries--;
+      if (retries === 0) {
+        console.error("\n❌ Failed to deploy MockUSDC after retries");
+        if (error.code === 'ECONNRESET' || error.message?.includes('ECONNRESET')) {
+          console.error("\n💡 Network connection issue detected!");
+          console.error("   Try using Alchemy RPC for more reliable connection:");
+          console.error("   1. Sign up: https://www.alchemy.com/");
+          console.error("   2. Create Base app");
+          console.error("   3. Add to .env: BASE_RPC_URL=https://base-mainnet.g.alchemy.com/v2/YOUR_KEY");
+        }
+        throw error;
+      }
+      console.log(`   Retry ${3 - retries}/3 (waiting 5 seconds)...`);
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
     }
-  } else {
-    // Mainnet USDC address on Base
-    usdcAddress = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
-    console.log("\nUsing mainnet USDC address:", usdcAddress);
+  }
+  
+  if (!mockUSDC) {
+    throw new Error("Failed to deploy MockUSDC");
+  }
+  
+  const usdcAddress = await mockUSDC.getAddress();
+  console.log("MockUSDC address:", usdcAddress);
+  
+  // Give deployer some USDC for testing
+  console.log("\n2. Minting 10,000 USDC to deployer for testing...");
+  try {
+    await mockUSDC!.mint(deployer.address, ethers.parseUnits("10000", 6));
+    console.log("✓ Minted successfully");
+  } catch (error) {
+    console.log("⚠️  Mint failed, but deployment succeeded");
   }
 
   console.log("\n3. Deploying PredictionMarket with USDC...");
   let predictionMarket;
-  let retries = 3;
+  let predictionRetries = 3;
   
-    while (retries > 0) {
+    while (predictionRetries > 0) {
       try {
         const PredictionMarketFactory = await ethers.getContractFactory("PredictionMarket");
         console.log("   Sending deployment transaction...");
@@ -103,19 +96,19 @@ async function main() {
         console.log("✓ PredictionMarket deployed");
         break;
       } catch (error: any) {
-        retries--;
-        if (retries === 0) {
+        predictionRetries--;
+        if (predictionRetries === 0) {
           console.error("\n❌ Failed to deploy PredictionMarket after retries");
           if (error.code === 'ECONNRESET' || error.message?.includes('ECONNRESET')) {
             console.error("\n💡 Network connection issue detected!");
             console.error("   Try using Alchemy RPC for more reliable connection:");
             console.error("   1. Sign up: https://www.alchemy.com/");
-            console.error("   2. Create Base Sepolia app");
-            console.error("   3. Add to .env: BASE_SEPOLIA_RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_KEY");
+            console.error("   2. Create Base app");
+            console.error("   3. Add to .env: BASE_RPC_URL=https://base-mainnet.g.alchemy.com/v2/YOUR_KEY");
           }
           throw error;
         }
-        console.log(`   Retry ${3 - retries}/3 (waiting 5 seconds)...`);
+        console.log(`   Retry ${3 - predictionRetries}/3 (waiting 5 seconds)...`);
         await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
       }
     }
@@ -139,22 +132,25 @@ async function main() {
   console.log(`PREDICTION_MARKET_ADDRESS=${address}`);
   
   console.log("\nNext steps:");
-  console.log("1. Add USDC_ADDRESS to .env file (for scripts)");
-  console.log("2. Update CONTRACT_ADDRESSES in ../manifest/app/lib/contracts.ts");
-  console.log("3. Mint USDC to test accounts:");
-  console.log(`   npm run mint-usdc -- <address> <amount>`);
+  console.log("1. Add USDC_ADDRESS to hardhat/.env file (for scripts):");
+  console.log(`   USDC_ADDRESS=${usdcAddress}`);
+  console.log("2. Update manifest/.env.local with:");
+  console.log(`   NEXT_PUBLIC_PREDICTION_MARKET_ADDRESS=${address}`);
+  console.log(`   NEXT_PUBLIC_USDC_ADDRESS=${usdcAddress}`);
+  console.log("3. Mint MockUSDC to test accounts:");
+  console.log(`   npm run mint-usdc <address> <amount>`);
   console.log("4. Verify contract on BaseScan:");
-  console.log(`   npx hardhat verify --network baseSepolia ${address} "${usdcAddress}"`);
+  const network = await ethers.provider.getNetwork();
+  const networkName = network.chainId === 84532n ? "baseSepolia" : "base";
+  console.log(`   npx hardhat verify --network ${networkName} ${address} "${usdcAddress}"`);
   
-  if (isTestnet) {
-    console.log("\n💡 Quick test commands:");
-    console.log(`   # Check your balance:`);
-    console.log(`   npm run check-balance`);
-    console.log(`   # Send USDC to someone:`);
-    console.log(`   npm run send-usdc -- <address> <amount>`);
-    console.log(`   # Mint more USDC:`);
-    console.log(`   npm run mint-usdc -- <address> <amount>`);
-  }
+  console.log("\n💡 Quick test commands:");
+  console.log(`   # Check your balance:`);
+  console.log(`   npm run check-balance <address>`);
+  console.log(`   # Send MockUSDC to someone:`);
+  console.log(`   npm run send-usdc <address> <amount>`);
+  console.log(`   # Mint more MockUSDC:`);
+  console.log(`   npm run mint-usdc <address> <amount>`);
 }
 
 main()

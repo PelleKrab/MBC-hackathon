@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useReadContract, usePublicClient } from "wagmi";
+import { useCallback, useEffect, useState } from "react";
 import { formatUnits } from "viem";
-import { baseSepolia } from "viem/chains";
+import { base } from "viem/chains";
+import { useChainId, usePublicClient, useReadContract } from "wagmi";
+import { getContractAddress, isContractConfigured, MarketStatus, PREDICTION_MARKET_ABI } from "../contracts";
 import { Market } from "../types";
-import { PREDICTION_MARKET_ABI, getContractAddress, isContractConfigured, MarketStatus } from "../contracts";
 
 // USDC has 6 decimals
 const USDC_DECIMALS = 6;
@@ -14,14 +14,16 @@ const USDC_DECIMALS = 6;
  * Hook to fetch all markets from the contract
  */
 export function useMarkets() {
+  const chainId = useChainId();
   const [markets, setMarkets] = useState<Market[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const publicClient = usePublicClient();
 
+  // Use Base mainnet (Chain ID: 8453)
   // Get market counter from contract
   const { data: marketCounter, refetch: refetchCounter } = useReadContract({
-    address: isContractConfigured() ? getContractAddress(baseSepolia.id) : undefined,
+    address: isContractConfigured() ? getContractAddress(base.id) : undefined,
     abi: PREDICTION_MARKET_ABI,
     functionName: "marketCounter",
     query: {
@@ -45,7 +47,7 @@ export function useMarkets() {
       setIsLoading(true);
       setError(null);
 
-      const contractAddress = getContractAddress(baseSepolia.id);
+      const contractAddress = getContractAddress(base.id);
       const count = marketCounter ? Number(marketCounter) : 0;
 
       if (count === 0) {
@@ -108,12 +110,12 @@ export function useMarkets() {
     loadMarkets();
   }, [loadMarkets]);
 
-  // Refresh every 30 seconds
+  // Refresh every 60 seconds (reduced frequency to avoid too many refreshes)
   useEffect(() => {
     const interval = setInterval(() => {
       refetchCounter();
       loadMarkets();
-    }, 30000);
+    }, 60000); // Changed from 30s to 60s
     return () => clearInterval(interval);
   }, [loadMarkets, refetchCounter]);
 
@@ -135,8 +137,9 @@ export function useMarket(marketId: string) {
   const contractMarketId = parseInt(marketId, 10);
   const isValidId = !isNaN(contractMarketId) && contractMarketId > 0;
 
+  // Use Base mainnet (Chain ID: 8453)
   const { data: rawMarket, isLoading: isContractLoading } = useReadContract({
-    address: isContractConfigured() && isValidId ? getContractAddress(baseSepolia.id) : undefined,
+    address: isContractConfigured() && isValidId ? getContractAddress(base.id) : undefined,
     abi: PREDICTION_MARKET_ABI,
     functionName: "getMarket",
     args: isValidId ? [BigInt(contractMarketId)] : undefined,

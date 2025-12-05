@@ -16,11 +16,15 @@ if (args.length < 2) {
 process.env.MINT_USDC_RECIPIENT = args[0];
 process.env.MINT_USDC_AMOUNT = args[1];
 
+// Determine network from environment or default to base (mainnet)
+// You can override by setting NETWORK env var: NETWORK=baseSepolia npm run mint-usdc ...
+const network = process.env.NETWORK || 'base';
+
 const hardhatArgs = [
   'run',
   'scripts/mintTestUSDC.ts',
   '--network',
-  'baseSepolia'
+  network
 ];
 
 const proc = spawn('npx', ['hardhat', ...hardhatArgs], {

@@ -22,11 +22,15 @@ export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps
   const [deadline, setDeadline] = useState(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
   const [error, setError] = useState("");
 
-  // Handle successful transaction
+  // Handle successful transaction - delay close to show success notification
   useEffect(() => {
     if (isSuccess) {
-      onSuccess();
-      onClose();
+      // Delay refetch and close to show success notification first
+      const timer = setTimeout(() => {
+        onSuccess(); // This triggers market refetch
+        onClose();
+      }, 4000); // Give 4 seconds to see success notification before refreshing
+      return () => clearTimeout(timer);
     }
   }, [isSuccess, onSuccess, onClose]);
 

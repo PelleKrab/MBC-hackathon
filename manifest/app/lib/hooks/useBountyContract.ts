@@ -1,9 +1,9 @@
 "use client";
 
-import { useWriteContract, useWaitForTransactionReceipt, useReadContract, useAccount } from "wagmi";
-import { parseUnits, formatUnits } from "viem";
-import { baseSepolia } from "viem/chains";
-import { PREDICTION_MARKET_ABI, ERC20_ABI, getContractAddress, getUSDCAddress, isContractConfigured } from "../contracts";
+import { formatUnits, parseUnits } from "viem";
+import { base } from "viem/chains";
+import { useAccount, useChainId, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { ERC20_ABI, getContractAddress, getUSDCAddress, isContractConfigured, PREDICTION_MARKET_ABI } from "../contracts";
 
 // USDC has 6 decimals
 const USDC_DECIMALS = 6;
@@ -12,6 +12,7 @@ const USDC_DECIMALS = 6;
  * Hook to create a new prediction market
  */
 export function useCreateBountyMarket() {
+  const chainId = useChainId();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -27,8 +28,12 @@ export function useCreateBountyMarket() {
       throw new Error("Contract not configured");
     }
     
-    const chainId = baseSepolia.id;
-    const contractAddress = getContractAddress(chainId);
+    // Ensure we're on Base mainnet (Chain ID: 8453)
+    if (chainId !== base.id) {
+      throw new Error(`Please switch to Base mainnet (Chain ID: 8453). Currently on chain ${chainId}`);
+    }
+    
+    const contractAddress = getContractAddress(base.id);
     // Convert timestamps from milliseconds to seconds for contract
     const deadlineInSeconds = Math.floor(deadline / 1000);
     const resolutionInSeconds = resolutionDate 
@@ -56,6 +61,7 @@ export function useCreateBountyMarket() {
  * Hook to approve USDC spending
  */
 export function useApproveUSDC() {
+  const chainId = useChainId();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -66,9 +72,12 @@ export function useApproveUSDC() {
       throw new Error("Contract not configured");
     }
     
-    const chainId = baseSepolia.id;
-    const contractAddress = getContractAddress(chainId);
-    const usdcAddress = getUSDCAddress(chainId);
+    // Ensure we're on Base mainnet (Chain ID: 8453)
+    if (chainId !== base.id) {
+      throw new Error(`Please switch to Base mainnet (Chain ID: 8453). Currently on chain ${chainId}`);
+    }
+    const contractAddress = getContractAddress(base.id);
+    const usdcAddress = getUSDCAddress(base.id);
     const amountInUnits = parseUnits(amount.toString(), USDC_DECIMALS);
 
     writeContract({
@@ -92,6 +101,7 @@ export function useApproveUSDC() {
  * Hook to place a prediction (bet) using USDC
  */
 export function useContributeToBounty() {
+  const chainId = useChainId();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -107,8 +117,11 @@ export function useContributeToBounty() {
       throw new Error("Contract not configured");
     }
     
-    const chainId = baseSepolia.id;
-    const contractAddress = getContractAddress(chainId);
+    // Ensure we're on Base mainnet (Chain ID: 8453)
+    if (chainId !== base.id) {
+      throw new Error(`Please switch to Base mainnet (Chain ID: 8453). Currently on chain ${chainId}`);
+    }
+    const contractAddress = getContractAddress(base.id);
     const amountInUnits = parseUnits(amount.toString(), USDC_DECIMALS);
     const timestampInSeconds = Math.floor(timestampGuess / 1000);
 
@@ -133,6 +146,7 @@ export function useContributeToBounty() {
  * Hook to verify bounty claim (admin only)
  */
 export function useVerifyProof() {
+  const chainId = useChainId();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -143,8 +157,11 @@ export function useVerifyProof() {
       throw new Error("Contract not configured");
     }
     
-    const chainId = baseSepolia.id;
-    const contractAddress = getContractAddress(chainId);
+    // Ensure we're on Base mainnet (Chain ID: 8453)
+    if (chainId !== base.id) {
+      throw new Error(`Please switch to Base mainnet (Chain ID: 8453). Currently on chain ${chainId}`);
+    }
+    const contractAddress = getContractAddress(base.id);
     const timestampInSeconds = Math.floor(actualTimestamp / 1000);
 
     writeContract({
@@ -168,6 +185,7 @@ export function useVerifyProof() {
  * Hook to resolve market (admin only)
  */
 export function useResolveWithUMA() {
+  const chainId = useChainId();
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading, isSuccess } = useWaitForTransactionReceipt({
     hash,
@@ -182,8 +200,11 @@ export function useResolveWithUMA() {
       throw new Error("Contract not configured");
     }
     
-    const chainId = baseSepolia.id;
-    const contractAddress = getContractAddress(chainId);
+    // Ensure we're on Base mainnet (Chain ID: 8453)
+    if (chainId !== base.id) {
+      throw new Error(`Please switch to Base mainnet (Chain ID: 8453). Currently on chain ${chainId}`);
+    }
+    const contractAddress = getContractAddress(base.id);
     const timestampInSeconds = Math.floor(actualTimestamp / 1000);
 
     writeContract({
@@ -207,10 +228,12 @@ export function useResolveWithUMA() {
  * Hook to get user's USDC balance
  */
 export function useUSDCBalance() {
+  const chainId = useChainId();
   const { address } = useAccount();
   
+  // Use Base mainnet (Chain ID: 8453)
   const { data: balance, isLoading, error, refetch } = useReadContract({
-    address: isContractConfigured() ? getUSDCAddress(baseSepolia.id) : undefined,
+    address: isContractConfigured() ? getUSDCAddress(base.id) : undefined,
     abi: ERC20_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
@@ -231,13 +254,15 @@ export function useUSDCBalance() {
  * Hook to check USDC allowance for the contract
  */
 export function useUSDCAllowance() {
+  const chainId = useChainId();
   const { address } = useAccount();
   
+  // Use Base mainnet (Chain ID: 8453)
   const { data: allowance, isLoading, error, refetch } = useReadContract({
-    address: isContractConfigured() ? getUSDCAddress(baseSepolia.id) : undefined,
+    address: isContractConfigured() ? getUSDCAddress(base.id) : undefined,
     abi: ERC20_ABI,
     functionName: "allowance",
-    args: address ? [address, getContractAddress(baseSepolia.id)] : undefined,
+    args: address ? [address, getContractAddress(base.id)] : undefined,
     query: {
       enabled: isContractConfigured() && !!address,
     },
@@ -268,8 +293,11 @@ export function useUserContribution(_marketId: number | null, _userAddress: stri
  * Hook to get contract admin address
  */
 export function useContractAdmin() {
+  const chainId = useChainId();
+  
+  // Use Base mainnet (Chain ID: 8453)
   const { data: admin, isLoading, error } = useReadContract({
-    address: isContractConfigured() ? getContractAddress(baseSepolia.id) : undefined,
+    address: isContractConfigured() ? getContractAddress(base.id) : undefined,
     abi: PREDICTION_MARKET_ABI,
     functionName: "admin",
     query: {

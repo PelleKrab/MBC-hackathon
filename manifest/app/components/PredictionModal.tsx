@@ -46,12 +46,16 @@ export function PredictionModal({
     }
   }, [approveSuccess, refetchAllowance]);
 
-  // Handle successful bet
+  // Handle successful bet - delay close to show success notification
   useEffect(() => {
     if (betSuccess) {
       refetchBalance();
-      onSuccess();
-      onClose();
+      // Delay refetch and close to show success notification first
+      const timer = setTimeout(() => {
+        onSuccess(); // This triggers market refetch
+        onClose();
+      }, 4000); // Give 4 seconds to see success notification before refreshing
+      return () => clearTimeout(timer);
     }
   }, [betSuccess, refetchBalance, onSuccess, onClose]);
 

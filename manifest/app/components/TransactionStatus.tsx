@@ -30,14 +30,14 @@ export function TransactionStatus({
     }
   }, [isPending, isSuccess, error]);
 
-  // Auto-dismiss success after 5 seconds
+  // Auto-dismiss success after 8 seconds (longer so user can see it)
   useEffect(() => {
     if (isSuccess && !isPending && !hasShownSuccess) {
       setHasShownSuccess(true);
       const timer = setTimeout(() => {
         setShow(false);
         onDismiss?.();
-      }, 5000);
+      }, 8000); // Increased to 8 seconds
       return () => clearTimeout(timer);
     }
   }, [isSuccess, isPending, hasShownSuccess, onDismiss]);
@@ -104,7 +104,7 @@ export function TransactionStatus({
           <div className={styles.content}>
             <div className={styles.title}>{label} Successful!</div>
             <div className={styles.message}>
-              Transaction confirmed on blockchain
+              Transaction confirmed on blockchain. Data will update shortly.
             </div>
             {hash && (
               <a

@@ -1,20 +1,19 @@
 import { Address } from "viem";
-import { base, baseSepolia } from "viem/chains";
+import { base } from "viem/chains";
 
 /**
  * Contract addresses - reads from env
+ * Only supports Base mainnet (Chain ID: 8453)
  */
 const PREDICTION_MARKET_ADDRESS = process.env.NEXT_PUBLIC_PREDICTION_MARKET_ADDRESS || "";
 const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS || "";
 
 export const CONTRACT_ADDRESSES = {
-  [baseSepolia.id]: PREDICTION_MARKET_ADDRESS || "0x0000000000000000000000000000000000000000",
   [base.id]: PREDICTION_MARKET_ADDRESS || "0x0000000000000000000000000000000000000000",
 } as const;
 
 export const USDC_ADDRESSES = {
-  [baseSepolia.id]: USDC_ADDRESS || "0x0000000000000000000000000000000000000000",
-  [base.id]: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // Base mainnet USDC
+  [base.id]: USDC_ADDRESS || "0x0000000000000000000000000000000000000000", // MockUSDC for testing
 } as const;
 
 /**

@@ -17,10 +17,11 @@ import {
 } from "@coinbase/onchainkit/wallet";
 import { useEffect, useState } from "react";
 import { useAccount, useChainId, useSwitchChain } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
+import { base } from "wagmi/chains";
 import { isContractConfigured } from "../lib/contracts";
 import { useContractAdmin } from "../lib/hooks/useBountyContract";
 import { useMarkets } from "../lib/hooks/useMarkets";
+import { Market } from "../lib/types";
 import styles from "../styles/page.module.css";
 import { AdminVerificationPanel } from "./AdminVerificationPanel";
 import { CreateMarketModal } from "./CreateMarketModal";
@@ -28,6 +29,17 @@ import { MarketList } from "./MarketList";
 
 function WalletButton() {
   const { context } = useMiniKit();
+  const { address, isConnected, isConnecting } = useAccount();
+  
+  // Show loading state while connecting
+  if (isConnecting) {
+    return (
+      <div className={styles.connectedBadge}>
+        <span className={styles.connectedDot} style={{ opacity: 0.5 }} />
+        <span className={styles.connectedText}>Connecting...</span>
+      </div>
+    );
+  }
   
   // If we're in a mini app and have context, show the connected state
   if (context && context.user) {
@@ -41,7 +53,19 @@ function WalletButton() {
     );
   }
 
-  // Otherwise show the regular wallet connect with dropdown
+  // If not connected, show connect button
+  if (!isConnected || !address) {
+    return (
+      <Wallet>
+        <ConnectWallet>
+          <Avatar className="h-6 w-6" />
+          <Name />
+        </ConnectWallet>
+      </Wallet>
+    );
+  }
+
+  // If connected, show wallet with dropdown and disconnect
   return (
     <Wallet>
       <ConnectWallet>
@@ -75,24 +99,26 @@ function AppContent() {
   const isUserConnected = isConnected || !!context?.user;
   const contractConfigured = isContractConfigured();
   
-  // Check if user is on the correct network
-  const isOnBaseSepolia = chainId === baseSepolia.id;
+  // Check if user is on Base mainnet
+  const isOnBaseMainnet = chainId === base.id;
+  const isOnCorrectNetwork = isOnBaseMainnet;
   
   // Check if user is admin
   const { admin: contractAdmin } = useContractAdmin();
   const isAdmin = contractAdmin && walletAddress && 
     contractAdmin.toLowerCase() === walletAddress.toLowerCase();
   
-  // Auto-switch to Base Sepolia if connected to wrong network
+  // Auto-switch to Base mainnet if connected to wrong network
   useEffect(() => {
-    if (isConnected && !isOnBaseSepolia && switchChain) {
+    if (isConnected && !isOnCorrectNetwork && switchChain) {
+      // Default to Base mainnet
       try {
-        switchChain({ chainId: baseSepolia.id });
+        switchChain({ chainId: base.id });
       } catch (err) {
         console.error("Failed to switch chain:", err);
       }
     }
-  }, [isConnected, isOnBaseSepolia, switchChain]);
+  }, [isConnected, isOnCorrectNetwork, switchChain]);
 
   // Signal to MiniKit that the app is ready
   useEffect(() => {
@@ -102,7 +128,7 @@ function AppContent() {
   }, [isMiniAppReady, setMiniAppReady]);
 
   const totalPool = markets.reduce(
-    (sum, m) => sum + m.yesPool + m.noPool + (m.bountyPool || 0),
+    (sum: number, m: Market) => sum + m.yesPool + m.noPool + (m.bountyPool || 0),
     0
   );
 
@@ -148,19 +174,19 @@ function AppContent() {
           </div>
         )}
 
-        {isConnected && !isOnBaseSepolia && (
+        {isConnected && !isOnCorrectNetwork && (
           <div className={styles.connectPrompt}>
             <span className={styles.connectIcon}>⚠️</span>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "center" }}>
               <p className={styles.connectText}>
-                Please switch to Base Sepolia network (Chain ID: 84532)
+                Please switch to Base Mainnet (Chain ID: 8453)
               </p>
               <button
-                onClick={() => switchChain?.({ chainId: baseSepolia.id })}
+                onClick={() => switchChain?.({ chainId: base.id })}
                 className={styles.createButton}
                 style={{ marginTop: "0.5rem" }}
               >
-                Switch to Base Sepolia
+                Switch to Base Mainnet
               </button>
             </div>
           </div>
@@ -192,10 +218,16 @@ function AppContent() {
           <h2 className={styles.sectionTitle}>Live Markets</h2>
           <p className={styles.sectionSubtitle}>
             Fund bounties • Make events happen • Claim rewards
+            {isLoading && <span style={{ marginLeft: "0.5rem", opacity: 0.7, fontSize: "0.875rem" }}>⏳ Updating...</span>}
           </p>
           <div className={styles.headerActions}>
-            <button onClick={refetch} className={styles.refreshButton}>
-              🔄 Refresh
+            <button 
+              onClick={refetch} 
+              className={styles.refreshButton}
+              disabled={isLoading}
+              title="Markets auto-refresh every 60 seconds"
+            >
+              {isLoading ? "⏳ Refreshing..." : "🔄 Refresh"}
             </button>
             {isConnected && contractConfigured && (
               <button
@@ -255,15 +287,15 @@ export function App() {
   return (
     <OnchainKitProvider
       apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
-      chain={baseSepolia}
-      chains={[baseSepolia]}
+      chain={base}
+      chains={[base]}
       config={{
         appearance: {
           mode: "dark",
           theme: "base",
         },
         wagmi: {
-          chains: [baseSepolia],
+          chains: [base],
         },
       }}
       miniKit={{

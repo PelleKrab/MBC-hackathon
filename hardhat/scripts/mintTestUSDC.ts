@@ -49,33 +49,70 @@ async function main() {
   console.log("Recipient address:", recipientAddress);
   console.log("Amount to mint:", amount, "USDC\n");
 
+  // Check network
+  const network = await ethers.provider.getNetwork();
+  const isTestnet = network.chainId === 84532n; // Base Sepolia
+  const isMainnet = network.chainId === 8453n; // Base mainnet
+
+  // Note: We allow minting on mainnet if using MockUSDC
+  // The script will check if the contract has a mint function
+
   // Check if USDC address is in .env
-  const usdcAddress = process.env.USDC_ADDRESS;
+  let usdcAddress = process.env.USDC_ADDRESS;
   
   if (!usdcAddress) {
     console.error("❌ USDC_ADDRESS not found in .env");
     console.log("Please add USDC_ADDRESS to your .env file");
     console.log("This should be the MockUSDC address from deployment");
+    console.log("\nTo get the address, check your deployment output or run:");
+    console.log("  npm run deploy:sepolia");
     process.exit(1);
   }
 
+  console.log("Network:", network.name, "(Chain ID:", network.chainId.toString() + ")");
   console.log("Using MockUSDC at:", usdcAddress);
 
   // Get MockUSDC contract
-  const MockUSDC = await ethers.getContractAt("MockUSDC", usdcAddress);
+  let MockUSDC;
+  try {
+    MockUSDC = await ethers.getContractAt("MockUSDC", usdcAddress);
+  } catch (error) {
+    console.error("❌ Failed to connect to contract at", usdcAddress);
+    console.log("This might not be a valid MockUSDC contract");
+    console.log("Make sure you deployed MockUSDC and set USDC_ADDRESS correctly");
+    process.exit(1);
+  }
   
-  // Check if it has mint function
+  // Check if it has mint function and is actually MockUSDC
+  let hasMintFunction = false;
   try {
     await MockUSDC.mint.staticCall(recipientAddress, 0);
-  } catch {
-    console.error("❌ Contract does not have mint function");
-    console.log("This might be real USDC, not MockUSDC");
-    console.log("Use sendTestUSDC.ts instead for transfers");
+    hasMintFunction = true;
+  } catch (error: any) {
+    // Check if it's because the address is real USDC (no mint function)
+    if (usdcAddress.toLowerCase() === "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913") {
+      console.error("❌ This is the mainnet USDC address, not MockUSDC!");
+      console.log("You're trying to use real USDC on testnet, which doesn't exist.");
+      console.log("Please deploy MockUSDC first or use the correct MockUSDC address from deployment.");
+    } else {
+      console.error("❌ Contract does not have mint function");
+      console.log("This might be real USDC, not MockUSDC");
+      console.log("Make sure USDC_ADDRESS points to the MockUSDC contract from deployment");
+    }
     process.exit(1);
   }
 
-  // Get decimals
-  const decimals = await MockUSDC.decimals();
+  // Get decimals - with better error handling
+  let decimals: number;
+  try {
+    decimals = await MockUSDC.decimals();
+  } catch (error: any) {
+    console.error("❌ Failed to get decimals from contract");
+    console.log("The contract at", usdcAddress, "might not be a valid ERC20 token");
+    console.log("Error:", error.message);
+    console.log("\nMake sure USDC_ADDRESS in .env points to the MockUSDC contract");
+    process.exit(1);
+  }
   const amountInWei = ethers.parseUnits(amount.toString(), decimals);
 
   // Check current balance
