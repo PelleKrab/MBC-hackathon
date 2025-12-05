@@ -21,12 +21,40 @@ export function TransactionStatus({
   onDismiss,
 }: TransactionStatusProps) {
   const [show, setShow] = useState(false);
+  const [hasShownSuccess, setHasShownSuccess] = useState(false);
 
+  // Show notification when transaction starts
   useEffect(() => {
     if (isPending || isSuccess || error) {
       setShow(true);
     }
   }, [isPending, isSuccess, error]);
+
+  // Auto-dismiss success after 5 seconds
+  useEffect(() => {
+    if (isSuccess && !isPending && !hasShownSuccess) {
+      setHasShownSuccess(true);
+      const timer = setTimeout(() => {
+        setShow(false);
+        onDismiss?.();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess, isPending, hasShownSuccess, onDismiss]);
+
+  // Reset when new transaction starts (new hash)
+  useEffect(() => {
+    if (hash && isPending) {
+      setHasShownSuccess(false);
+    }
+  }, [hash, isPending]);
+
+  // Hide if no active transaction and not showing success
+  useEffect(() => {
+    if (!isPending && !isSuccess && !error && !hasShownSuccess) {
+      setShow(false);
+    }
+  }, [isPending, isSuccess, error, hasShownSuccess]);
 
   if (!show) return null;
 
