@@ -1,0 +1,27 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjM4MjUwMSwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweEVhYmI4NGE4NjgxZjcwMkE1Yzc0OTE1MDNkNTM4MDYzNDYxMDNGMUIifQ",
+    "payload": "eyJkb21haW4iOiJtYmMtaGFja2F0aG9uLnZlcmNlbC5hcHAifQ",
+    "signature": "LKOsHD/fXEBTEIXNdOaqvS0iT9DJbNg20JwoDwruCxQD49nFHyuEJlvfUatGJ5tJZ4eGDiqoQ2iD2WpP9jMgfRs="
+  },
+  "frame": {
+    "version": "1",
+    "name": "Manifest",
+    "subtitle": "MBC Prediction Markets",
+    "description": "Bet on outcomes at the Midwest Blockchain Conference. Guess timestamps, win rewards. 90% goes to winning side, 10% to best timestamp guess.",
+    "screenshotUrls": ["https://mbc-hackathon.vercel.app/screenshot.png"],
+    "iconUrl": "https://mbc-hackathon.vercel.app/icon.png",
+    "splashImageUrl": "https://mbc-hackathon.vercel.app/splash.png",
+    "splashBackgroundColor": "#0d1117",
+    "homeUrl": "https://mbc-hackathon.vercel.app",
+    "webhookUrl": "https://mbc-hackathon.vercel.app/api/webhook",
+    "primaryCategory": "games",
+    "tags": ["prediction-market", "betting", "crypto", "base", "mbc"],
+    "heroImageUrl": "https://mbc-hackathon.vercel.app/hero.png",
+    "tagline": "Predict MBC outcomes, win ETH",
+    "ogTitle": "Manifest - MBC Prediction Markets",
+    "ogDescription": "Place predictions on Midwest Blockchain Conference events. Guess the exact timestamp and win big!",
+    "ogImageUrl": "https://mbc-hackathon.vercel.app/hero.png"
+  }
+}
+
