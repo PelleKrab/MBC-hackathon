@@ -38,7 +38,7 @@ function WalletButton() {
     );
   }
 
-  // Otherwise show the regular wallet connect
+  // Otherwise show the regular wallet connect with dropdown
   return (
     <Wallet>
       <ConnectWallet>
