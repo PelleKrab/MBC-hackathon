@@ -1,26 +1,41 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+const BASE_URL = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "Manifest - On-chain Prediction Markets",
+  title: "Manifest - MBC Prediction Markets",
   description:
-    "Bet on outcomes, guess timestamps, win rewards. Place binary predictions on crypto markets with a unique timestamp guessing game on Base.",
+    "Bet on outcomes at the Midwest Blockchain Conference. Guess timestamps, win rewards.",
+  metadataBase: new URL(BASE_URL),
   openGraph: {
-    title: "Manifest - On-chain Prediction Markets",
+    title: "Manifest - MBC Prediction Markets",
     description:
-      "Bet on crypto outcomes with a unique timestamp guessing game. Join the prediction market revolution on Base.",
+      "Place predictions on MBC events. Guess the exact timestamp and win big!",
     type: "website",
-    images: ["/hero.png"],
+    url: BASE_URL,
+    images: [
+      {
+        url: `${BASE_URL}/hero.png`,
+        width: 1200,
+        height: 630,
+        alt: "Manifest - MBC Prediction Markets",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Manifest - On-chain Prediction Markets",
+    title: "Manifest - MBC Prediction Markets",
     description:
-      "Bet on crypto outcomes with a unique timestamp guessing game. Join the prediction market revolution on Base.",
-    images: ["/hero.png"],
+      "Place predictions on MBC events. Guess the exact timestamp and win big!",
+    images: [`${BASE_URL}/hero.png`],
   },
   other: {
     "fc:frame": "vNext",
+    "fc:frame:image": `${BASE_URL}/hero.png`,
+    "fc:frame:button:1": "Open App",
+    "fc:frame:button:1:action": "launch_frame",
+    "fc:frame:button:1:target": BASE_URL,
   },
 };
 
