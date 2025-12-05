@@ -36,7 +36,7 @@ export interface CreatePolymarketMarketParams {
  * Polymarket API endpoints
  * Using their public API: https://clob.polymarket.com
  */
-const POLYMARKET_API_BASE = "https://clob.polymarket.com";
+const _POLYMARKET_API_BASE = "https://clob.polymarket.com";
 const POLYMARKET_GRAPHQL = "https://api.thegraph.com/subgraphs/name/polymarket";
 
 /**
@@ -109,8 +109,9 @@ export async function getPolymarketMarket(marketId: string): Promise<PolymarketM
  * For hackathon, we'll use a simplified approach that prepares the transaction.
  */
 export async function createPolymarketMarket(
-  params: CreatePolymarketMarketParams,
-  signer: any // Wallet signer
+  _params: CreatePolymarketMarketParams,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  _signer: any // Wallet signer
 ): Promise<{ marketId: string; txHash: string }> {
   // In production, this would:
   // 1. Call Polymarket's market creation contract
@@ -132,10 +133,11 @@ export async function createPolymarketMarket(
  * This interacts with Polymarket's CTF (Conditional Tokens Framework) contracts
  */
 export async function placePolymarketBet(
-  marketId: string,
-  outcome: "Yes" | "No",
-  amount: string, // Amount in USDC
-  signer: any
+  _marketId: string,
+  _outcome: "Yes" | "No",
+  _amount: string, // Amount in USDC
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  _signer: any
 ): Promise<{ txHash: string }> {
   // In production, this would:
   // 1. Approve USDC spending
@@ -181,7 +183,7 @@ export async function isPolymarketResolved(marketId: string): Promise<boolean> {
   try {
     const market = await getPolymarketMarket(marketId);
     return market ? !market.active : false;
-  } catch (error) {
+  } catch {
     return false;
   }
 }

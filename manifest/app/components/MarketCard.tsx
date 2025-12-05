@@ -58,10 +58,10 @@ export function MarketCard({ market, onPlaceBet, onSubmitProof, index = 0 }: Mar
       <footer className={styles.footer}>
         <div className={styles.poolInfo}>
           <span className={styles.poolLabel}>Total Pool</span>
-          <span className={styles.poolAmount}>{formatAmount(totalPool)} ETH</span>
+          <span className={styles.poolAmount}>{formatAmount(totalPool)} USDC</span>
           {bountyAmount > 0 && (
             <span className={styles.bountyLabel}>
-              💰 Bounty: {formatAmount(bountyAmount)} ETH
+              💰 Bounty: {formatAmount(bountyAmount)} USDC
             </span>
           )}
         </div>
@@ -84,4 +84,3 @@ export function MarketCard({ market, onPlaceBet, onSubmitProof, index = 0 }: Mar
     </article>
   );
 }
-

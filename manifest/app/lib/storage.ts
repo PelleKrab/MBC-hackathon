@@ -1,7 +1,5 @@
 import { Market, Prediction, PredictionInput, ProofSubmission, ProofSubmissionInput } from "./types";
-import { generateMockMarkets } from "./utils/mockData";
 
-const MARKETS_KEY = "pm_markets_v3";
 const PREDICTIONS_KEY = "pm_predictions_v3";
 const PROOFS_KEY = "pm_proofs_v1";
 
@@ -17,7 +15,10 @@ function getBrowserStorage(): Storage | null {
   return null;
 }
 
-// Storage class that handles client-side localStorage safely
+/**
+ * Storage class for local caching of predictions and proofs
+ * Markets are now fetched from the contract, not localStorage
+ */
 class StorageService {
   private getItem(key: string): string | null {
     const storage = getBrowserStorage();
@@ -52,12 +53,6 @@ class StorageService {
   initializeSeedData(): void {
     if (!getBrowserStorage()) return;
 
-    const existingMarkets = this.getItem(MARKETS_KEY);
-    if (!existingMarkets) {
-      const mockMarkets = generateMockMarkets();
-      this.setItem(MARKETS_KEY, JSON.stringify(mockMarkets));
-    }
-
     const existingPredictions = this.getItem(PREDICTIONS_KEY);
     if (!existingPredictions) {
       this.setItem(PREDICTIONS_KEY, JSON.stringify([]));
@@ -69,43 +64,26 @@ class StorageService {
     }
   }
 
-  // Force refresh all market data with new mock data
-  refreshMarkets(): void {
-    if (!getBrowserStorage()) return;
-    const mockMarkets = generateMockMarkets();
-    this.setItem(MARKETS_KEY, JSON.stringify(mockMarkets));
-    this.setItem(PREDICTIONS_KEY, JSON.stringify([]));
-    this.setItem(PROOFS_KEY, JSON.stringify([]));
-  }
-
+  // Markets are now loaded from contract - these are placeholder methods
   getMarkets(): Market[] {
-    if (!getBrowserStorage()) return [];
-
-    const data = this.getItem(MARKETS_KEY);
-    if (!data) {
-      this.initializeSeedData();
-      const newData = this.getItem(MARKETS_KEY);
-      return newData ? JSON.parse(newData) : [];
-    }
-
-    return JSON.parse(data);
+    // Markets come from contract now
+    return [];
   }
 
-  getMarket(id: string): Market | null {
-    const markets = this.getMarkets();
-    return markets.find((m) => m.id === id) || null;
+  getMarket(_id: string): Market | null {
+    // Markets come from contract now
+    return null;
   }
 
-  updateMarket(id: string, updates: Partial<Market>): Market | null {
-    const markets = this.getMarkets();
-    const index = markets.findIndex((m) => m.id === id);
+  updateMarket(_id: string, _updates: Partial<Market>): Market | null {
+    // Markets are on-chain now
+    console.warn("Markets are now stored on-chain. Use contract methods to update.");
+    return null;
+  }
 
-    if (index === -1) return null;
-
-    markets[index] = { ...markets[index], ...updates };
-    this.setItem(MARKETS_KEY, JSON.stringify(markets));
-
-    return markets[index];
+  refreshMarkets(): void {
+    // Markets are on-chain now - no-op
+    console.log("Markets are loaded from contract. Use refetch() to reload.");
   }
 
   getPredictions(marketId?: string): Prediction[] {
@@ -124,37 +102,16 @@ class StorageService {
   }
 
   addPrediction(input: PredictionInput): Prediction {
-    const { marketId, amount, prediction: predictionChoice } = input;
-
     const newPrediction: Prediction = {
       ...input,
       id: `pred-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       createdAt: Date.now(),
     };
 
-    // Save prediction
+    // Save prediction locally (for UI tracking)
     const predictions = this.getPredictions();
     predictions.push(newPrediction);
     this.setItem(PREDICTIONS_KEY, JSON.stringify(predictions));
-
-    // Update market pools
-    const market = this.getMarket(marketId);
-    if (market) {
-      const bountyPoolAmount = amount * 0.1; // 10% to bounty pool
-      const predictionPoolAmount = amount * 0.9; // 90% to yes/no pool
-
-      const updates: Partial<Market> = {
-        bountyPool: (market.bountyPool || 0) + bountyPoolAmount,
-      };
-
-      if (predictionChoice === "yes") {
-        updates.yesPool = market.yesPool + predictionPoolAmount;
-      } else {
-        updates.noPool = market.noPool + predictionPoolAmount;
-      }
-
-      this.updateMarket(marketId, updates);
-    }
 
     return newPrediction;
   }
@@ -214,14 +171,14 @@ class StorageService {
   }
 
   clearAllData(): void {
-    this.removeItem(MARKETS_KEY);
     this.removeItem(PREDICTIONS_KEY);
     this.removeItem(PROOFS_KEY);
-    // Also clear old versioned keys
+    // Clear old versioned keys
     this.removeItem("pm_markets");
     this.removeItem("pm_predictions");
     this.removeItem("pm_markets_v2");
     this.removeItem("pm_predictions_v2");
+    this.removeItem("pm_markets_v3");
     this.initializeSeedData();
   }
 }

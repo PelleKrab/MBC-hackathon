@@ -116,7 +116,7 @@ export function ProofSubmissionModal({
             💰 Bounty: {market.bountyPool?.toFixed(4) || "0.0000"} ETH
           </p>
           <p className={styles.helpText}>
-            Submit proof that you made this event happen. If verified, you'll
+            Submit proof that you made this event happen. If verified, you&apos;ll
             receive 10% of all bets!
           </p>
         </div>

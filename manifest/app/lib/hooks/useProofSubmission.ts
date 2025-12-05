@@ -4,9 +4,14 @@ import { useState } from "react";
 import { ProofSubmissionInput } from "../types";
 import { storage } from "../storage";
 
+/**
+ * Hook to submit proof
+ * Note: In PredictionMarket, proofs are submitted off-chain and admin calls verifyBountyClaim
+ */
 export function useSubmitProof() {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const submitProof = async (input: {
     marketId: string;
@@ -17,6 +22,7 @@ export function useSubmitProof() {
   }) => {
     setIsPending(true);
     setError(null);
+    setIsSuccess(false);
 
     try {
       // Upload image
@@ -34,7 +40,8 @@ export function useSubmitProof() {
 
       const { url } = await uploadResponse.json();
 
-      // Create proof submission
+      // Store proof locally for admin to review
+      // Admin will call verifyBountyClaim on the contract
       const proofInput: ProofSubmissionInput = {
         marketId: input.marketId,
         submitterAddress: input.submitterAddress,
@@ -43,7 +50,8 @@ export function useSubmitProof() {
       };
 
       const proof = storage.addProof(proofInput);
-
+      
+      setIsSuccess(true);
       setIsPending(false);
       return proof;
     } catch (err) {
@@ -55,6 +63,5 @@ export function useSubmitProof() {
     }
   };
 
-  return { submitProof, isPending, error };
+  return { submitProof, isPending, isSuccess, error };
 }
-

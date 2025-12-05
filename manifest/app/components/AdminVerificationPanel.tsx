@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { ProofSubmission } from "../lib/types";
 import { storage } from "../lib/storage";
-import { useVerifyBountyClaim } from "../lib/hooks/useContract";
+import { useVerifyProof } from "../lib/hooks/useBountyContract";
 import styles from "../styles/AdminVerificationPanel.module.css";
 
 interface AdminVerificationPanelProps {
@@ -13,7 +13,7 @@ interface AdminVerificationPanelProps {
 export function AdminVerificationPanel({ isAdmin = false }: AdminVerificationPanelProps) {
   const [proofs, setProofs] = useState<ProofSubmission[]>([]);
   const [selectedProof, setSelectedProof] = useState<ProofSubmission | null>(null);
-  const { verifyBountyClaim, isPending } = useVerifyBountyClaim();
+  const { verifyProof, isPending } = useVerifyProof();
 
   // Load pending proofs
   const loadPendingProofs = () => {
@@ -37,14 +37,10 @@ export function AdminVerificationPanel({ isAdmin = false }: AdminVerificationPan
     }
 
     try {
-      // If market is on-chain, call contract
-      const market = storage.getMarket(proof.marketId);
-      if (market?.contractMarketId) {
-        await verifyBountyClaim({
-          marketId: market.contractMarketId,
-          claimant: proof.submitterAddress,
-          actualTimestamp: proof.timestamp,
-        });
+      // Call contract to verify proof
+      const contractMarketId = parseInt(proof.marketId, 10);
+      if (!isNaN(contractMarketId)) {
+        await verifyProof(contractMarketId, proof.submitterAddress, proof.timestamp);
       }
 
       // Update proof status

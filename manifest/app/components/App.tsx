@@ -15,11 +15,11 @@ import {
     WalletDropdown,
     WalletDropdownDisconnect,
 } from "@coinbase/onchainkit/wallet";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { base } from "wagmi/chains";
-import { storage } from "../lib/storage";
-import { Market } from "../lib/types";
+import { useMarkets } from "../lib/hooks/useMarkets";
+import { isContractConfigured } from "../lib/contracts";
 import styles from "../styles/page.module.css";
 import { CreateMarketModal } from "./CreateMarketModal";
 import { MarketList } from "./MarketList";
@@ -59,15 +59,17 @@ function WalletButton() {
 }
 
 function AppContent() {
-  const [markets, setMarkets] = useState<Market[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { address, isConnected } = useAccount();
   const { context, setMiniAppReady, isMiniAppReady } = useMiniKit();
   
+  // Use contract-based market loading
+  const { markets, isLoading, error, refetch } = useMarkets();
+  
   // Get wallet address from wagmi, or use FID as identifier in mini app
   const walletAddress = address;
   const isUserConnected = isConnected || !!context?.user;
+  const contractConfigured = isContractConfigured();
 
   // Signal to MiniKit that the app is ready
   useEffect(() => {
@@ -75,37 +77,6 @@ function AppContent() {
       setMiniAppReady();
     }
   }, [isMiniAppReady, setMiniAppReady]);
-
-  const loadMarkets = useCallback(() => {
-    storage.initializeSeedData();
-    const allMarkets = storage.getMarkets();
-    const activeMarkets = allMarkets
-      .filter((m) => m.status === "active" && m.deadline > Date.now())
-      .sort((a, b) => a.deadline - b.deadline);
-    setMarkets(activeMarkets);
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    storage.initializeSeedData();
-    const allMarkets = storage.getMarkets();
-    const activeMarkets = allMarkets.filter(
-      (m) => m.status === "active" && m.deadline > Date.now()
-    );
-
-    if (activeMarkets.length === 0) {
-      storage.refreshMarkets();
-    }
-
-    loadMarkets();
-    const interval = setInterval(loadMarkets, 30000);
-    return () => clearInterval(interval);
-  }, [loadMarkets]);
-
-  const handleRefresh = () => {
-    storage.refreshMarkets();
-    loadMarkets();
-  };
 
   const totalPool = markets.reduce(
     (sum, m) => sum + m.yesPool + m.noPool + (m.bountyPool || 0),
@@ -136,7 +107,16 @@ function AppContent() {
           </p>
         </div>
 
-        {!isUserConnected && (
+        {!contractConfigured && (
+          <div className={styles.connectPrompt}>
+            <span className={styles.connectIcon}>⚠️</span>
+            <p className={styles.connectText}>
+              Contract not configured. Set NEXT_PUBLIC_BOUNTY_CONTRACT_ADDRESS in .env
+            </p>
+          </div>
+        )}
+
+        {!isUserConnected && contractConfigured && (
           <div className={styles.connectPrompt}>
             <span className={styles.connectIcon}>👛</span>
             <p className={styles.connectText}>
@@ -145,31 +125,38 @@ function AppContent() {
           </div>
         )}
 
+        {error && (
+          <div className={styles.connectPrompt}>
+            <span className={styles.connectIcon}>❌</span>
+            <p className={styles.connectText}>{error}</p>
+          </div>
+        )}
+
         <div className={styles.statsBar}>
           <div className={styles.statItem}>
             <span className={styles.statValue}>{markets.length}</span>
-            <span className={styles.statLabel}>Active Bets</span>
+            <span className={styles.statLabel}>Active Markets</span>
           </div>
           <div className={styles.statItem}>
-            <span className={styles.statValue}>{totalPool.toFixed(1)}</span>
-            <span className={styles.statLabel}>ETH in Pool</span>
+            <span className={styles.statValue}>{totalPool.toFixed(2)}</span>
+            <span className={styles.statLabel}>ETH in Pools</span>
           </div>
           <div className={styles.statItem}>
-            <span className={styles.statValue}>10%</span>
-            <span className={styles.statLabel}>Timestamp Bonus</span>
+            <span className={styles.statValue}>100%</span>
+            <span className={styles.statLabel}>Bounty Pool</span>
           </div>
         </div>
 
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Live Markets</h2>
           <p className={styles.sectionSubtitle}>
-            Place your bets • Guess the exact time • Win big
+            Fund bounties • Make events happen • Claim rewards
           </p>
           <div className={styles.headerActions}>
-            <button onClick={handleRefresh} className={styles.refreshButton}>
-              🔄 Reset Markets
+            <button onClick={refetch} className={styles.refreshButton}>
+              🔄 Refresh
             </button>
-            {isConnected && (
+            {isConnected && contractConfigured && (
               <button
                 onClick={() => setShowCreateModal(true)}
                 className={styles.createButton}
@@ -184,7 +171,7 @@ function AppContent() {
           markets={markets}
           userAddress={walletAddress}
           isLoading={isLoading}
-          onPredictionSuccess={loadMarkets}
+          onPredictionSuccess={refetch}
         />
 
         {showCreateModal && (
@@ -192,7 +179,7 @@ function AppContent() {
             onClose={() => setShowCreateModal(false)}
             onSuccess={() => {
               setShowCreateModal(false);
-              loadMarkets();
+              refetch();
             }}
           />
         )}

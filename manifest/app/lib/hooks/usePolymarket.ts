@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAccount } from "wagmi";
 import {
   fetchPolymarketMarkets,
   getPolymarketMarket,
@@ -60,7 +59,7 @@ export function usePolymarketMarket(marketId: string | null) {
       setIsLoading(true);
       setError(null);
       try {
-        const data = await getPolymarketMarket(marketId);
+        const data = await getPolymarketMarket(marketId!);
         setMarket(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load market");
@@ -94,7 +93,7 @@ export function usePolymarketPrices(marketId: string | null) {
     async function loadPrices() {
       setIsLoading(true);
       try {
-        const data = await getPolymarketPrices(marketId);
+        const data = await getPolymarketPrices(marketId!);
         setPrices(data);
       } catch (err) {
         console.error("Failed to load prices:", err);
@@ -128,7 +127,7 @@ export function usePolymarketResolved(marketId: string | null) {
     async function checkResolved() {
       setIsLoading(true);
       try {
-        const resolved = await isPolymarketResolved(marketId);
+        const resolved = await isPolymarketResolved(marketId!);
         setIsResolved(resolved);
       } catch (err) {
         console.error("Failed to check resolution:", err);

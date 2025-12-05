@@ -23,7 +23,7 @@ export function MarketList({
 }: MarketListProps) {
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [proofMarket, setProofMarket] = useState<Market | null>(null);
-  const { submitProof, isPending: isSubmittingProof } = useSubmitProof();
+  const { submitProof } = useSubmitProof();
 
   if (isLoading) {
     return (

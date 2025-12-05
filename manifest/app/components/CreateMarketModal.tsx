@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
-import { useCreateMarket } from "../lib/hooks/useContract";
+import { useCreateBountyMarket } from "../lib/hooks/useBountyContract";
+import { isContractConfigured } from "../lib/contracts";
 import { TimestampPicker } from "./TimestampPicker";
 import styles from "../styles/CreateMarketModal.module.css";
 
@@ -13,13 +14,28 @@ interface CreateMarketModalProps {
 
 export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps) {
   const { address, isConnected } = useAccount();
-  const { createMarket, isPending } = useCreateMarket();
+  const { createBountyMarket, isPending, isSuccess, error: txError } = useCreateBountyMarket();
 
   const [question, setQuestion] = useState("");
   const [description, setDescription] = useState("");
   const [deadline, setDeadline] = useState(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
   const [resolutionDate, setResolutionDate] = useState(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days
   const [error, setError] = useState("");
+
+  // Handle successful transaction
+  useEffect(() => {
+    if (isSuccess) {
+      onSuccess();
+      onClose();
+    }
+  }, [isSuccess, onSuccess, onClose]);
+
+  // Handle transaction error
+  useEffect(() => {
+    if (txError) {
+      setError(txError.message || "Transaction failed");
+    }
+  }, [txError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,8 +46,18 @@ export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps
       return;
     }
 
+    if (!isContractConfigured()) {
+      setError("Contract not configured. Set NEXT_PUBLIC_PREDICTION_MARKET_ADDRESS in .env");
+      return;
+    }
+
     if (!question.trim()) {
       setError("Please enter a question");
+      return;
+    }
+
+    if (!description.trim()) {
+      setError("Please enter a description");
       return;
     }
 
@@ -46,11 +72,7 @@ export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps
     }
 
     try {
-      // Create market on Base
-      await createMarket(question, description, deadline, resolutionDate);
-      
-      onSuccess();
-      onClose();
+      await createBountyMarket(question, description, deadline, resolutionDate);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create market");
     }
@@ -60,7 +82,7 @@ export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <header className={styles.header}>
-          <h2 className={styles.title}>Create Market</h2>
+          <h2 className={styles.title}>Create Prediction Market</h2>
           <button
             className={styles.closeButton}
             onClick={onClose}
@@ -95,7 +117,7 @@ export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Market resolves YES if Jesse receives a pie to the face..."
+              placeholder="Market resolves YES if Jesse receives a pie to the face during MBC. Must be witnessed by at least 3 attendees."
               className={styles.textarea}
               rows={4}
               required
@@ -125,15 +147,15 @@ export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps
           </div>
 
           <div className={styles.infoBox}>
-            <strong>💰 Bounty System:</strong>
+            <strong>💰 How it works:</strong>
             <ul>
-              <li>10% of all bets go to bounty pool</li>
-              <li>Rewards people who make events happen</li>
-              <li>Submit proof with photo + timestamp</li>
-              <li>Admin verifies and distributes bounty</li>
+              <li>Users bet USDC on YES or NO</li>
+              <li>90% goes to prediction pools, 10% to bounty pool</li>
+              <li>Winners split the losing pool proportionally</li>
+              <li>Closest timestamp guess wins the bounty!</li>
             </ul>
             <p style={{ marginTop: "0.5rem", fontSize: "0.85rem", color: "#999" }}>
-              🎯 Built on Base • Compatible with Polymarket architecture
+              🎯 Built on Base Sepolia
             </p>
           </div>
 
@@ -142,6 +164,12 @@ export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps
           {!isConnected && (
             <div className={styles.warning}>
               Connect your wallet to create a market
+            </div>
+          )}
+
+          {!isContractConfigured() && (
+            <div className={styles.warning}>
+              Contract not configured. Set NEXT_PUBLIC_PREDICTION_MARKET_ADDRESS
             </div>
           )}
 
@@ -155,7 +183,7 @@ export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps
             </button>
             <button
               type="submit"
-              disabled={!isConnected || isPending}
+              disabled={!isConnected || isPending || !isContractConfigured()}
               className={styles.submitButton}
             >
               {isPending ? "Creating..." : "Create Market"}
@@ -166,4 +194,3 @@ export function CreateMarketModal({ onClose, onSuccess }: CreateMarketModalProps
     </div>
   );
 }
-
