@@ -25,6 +25,21 @@ import { CreateMarketModal } from "./CreateMarketModal";
 import { MarketList } from "./MarketList";
 
 function WalletButton() {
+  const { context } = useMiniKit();
+  
+  // If we're in a mini app and have context, show the connected state
+  if (context && context.user) {
+    return (
+      <div className={styles.connectedBadge}>
+        <span className={styles.connectedDot} />
+        <span className={styles.connectedText}>
+          {context.user.displayName || `FID: ${context.user.fid}`}
+        </span>
+      </div>
+    );
+  }
+
+  // Otherwise show the regular wallet connect with dropdown
   return (
     <Wallet>
       <ConnectWallet>
@@ -48,8 +63,13 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { address, isConnected } = useAccount();
-  const { setMiniAppReady, isMiniAppReady } = useMiniKit();
+  const { context, setMiniAppReady, isMiniAppReady } = useMiniKit();
+  
+  // Get wallet address from wagmi, or use FID as identifier in mini app
+  const walletAddress = address;
+  const isUserConnected = isConnected || !!context?.user;
 
+  // Signal to MiniKit that the app is ready
   useEffect(() => {
     if (!isMiniAppReady) {
       setMiniAppReady();
@@ -116,7 +136,7 @@ function AppContent() {
           </p>
         </div>
 
-        {!isConnected && (
+        {!isUserConnected && (
           <div className={styles.connectPrompt}>
             <span className={styles.connectIcon}>👛</span>
             <p className={styles.connectText}>
@@ -162,7 +182,7 @@ function AppContent() {
 
         <MarketList
           markets={markets}
-          userAddress={address}
+          userAddress={walletAddress}
           isLoading={isLoading}
           onPredictionSuccess={loadMarkets}
         />

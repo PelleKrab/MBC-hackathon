@@ -220,3 +220,10 @@ input {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* OnchainKit Wallet Overrides */
+/* Move only the Disconnect text, not the icon */
+[data-testid="ockWalletDropdownDisconnectButton"] span,
+[class*="ock"] button:last-of-type span {
+  margin-left: 2.5em !important;
+}

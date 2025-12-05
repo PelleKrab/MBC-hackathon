@@ -42,6 +42,7 @@ export function TimestampPicker({
       setTimeValue(`${hours}:${minutes}`);
       onChange(defaultDate.getTime());
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDateChange = (newDate: string) => {
